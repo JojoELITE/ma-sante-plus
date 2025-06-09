@@ -1,9 +1,7 @@
-// 
-
-
 import * as React from 'react';
 import { useRoomContext } from '@livekit/components-react';
 import { setLogLevel, LogLevel, RemoteTrackPublication, setLogExtension } from 'livekit-client';
+// @ts-ignore
 import { tinykeys } from 'tinykeys';
 import { datadogLogs } from '@datadog/browser-logs';
 
@@ -19,7 +17,7 @@ export const useDebugMode = ({ logLevel }: { logLevel?: LogLevel }) => {
       console.log('setting up datadog logs');
       datadogLogs.init({
         clientToken: process.env.NEXT_PUBLIC_DATADOG_CLIENT_TOKEN,
-        site: process.env.NEXT_PUBLIC_DATADOG_SITE as string,
+        site: process.env.NEXT_PUBLIC_DATADOG_SITE as any,
         forwardErrorsToLogs: true,
         sessionSampleRate: 100,
       });
@@ -44,11 +42,11 @@ export const useDebugMode = ({ logLevel }: { logLevel?: LogLevel }) => {
       });
     }
 
-    // @ts-expect-error - `window.__lk_room` is used to store the room instance for debugging purposes.
+    // @ts-expect-error
     window.__lk_room = room;
 
     return () => {
-      // @ts-expect-error - Removing `window.__lk_room` on component unmount.
+      // @ts-expect-error
       window.__lk_room = undefined;
     };
   }, [room, logLevel]);
@@ -67,7 +65,7 @@ export const DebugMode = ({ logLevel }: { logLevel?: LogLevel }) => {
   useDebugMode({ logLevel });
 
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (window) {
       const unsubscribe = tinykeys(window, {
         'Shift+D': () => {
           console.log('setting open');
@@ -75,7 +73,7 @@ export const DebugMode = ({ logLevel }: { logLevel?: LogLevel }) => {
         },
       });
 
-      // Timer to re-render
+      // timer to re-render
       const interval = setInterval(() => {
         setRender({});
       }, 1000);
@@ -91,21 +89,20 @@ export const DebugMode = ({ logLevel }: { logLevel?: LogLevel }) => {
     return null;
   }
 
-  // Supprime la fonction handleSimulate si elle n'est pas utilisée
   const handleSimulate = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const { value } = event.target;
     if (value == '') {
       return;
     }
     event.target.value = '';
-    // isReconnect est une variable inutilisée, donc supprimée
+    let isReconnect = false;
     switch (value) {
       case 'signal-reconnect':
-        // Pas nécessaire si non utilisé
-        break;
+        isReconnect = true;
 
+      // fall through
       default:
-        // @ts-expect-error - simulateScenario n'est pas typé et peut ne pas exister.
+        // @ts-expect-error
         room.simulateScenario(value);
     }
   };

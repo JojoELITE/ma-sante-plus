@@ -1,4 +1,3 @@
-// app/dashboard/page.tsx
 "use client"
 
 import { useEffect, useState } from "react"
@@ -13,42 +12,66 @@ interface UserData {
 export default function Dashboard() {
   const [user, setUser] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  // Récupération de l'utilisateur à l'arrivée sur la page
+  const APP_KEY = process.env.NEXT_PUBLIC_SECRET_CODE ?? ""
+
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch("http://192.168.20.83:3333/me", {
-           method: "GET",
-           credentials: 'include',
-         
-        })
+    if (typeof window === 'undefined') return
 
-        if (!response.ok) throw new Error("Non authentifié")
+    const token = sessionStorage.getItem('token')
+    const userDataString = sessionStorage.getItem('userData')
 
-        setUser(await response.json())
-      } catch (error) {
-        console.error("Erreur d'authentification", error)
-        router.push("/auth/login")
-      } finally {
-        setLoading(false)
-      }
+    if (!token) {
+      setError("Session expirée ou invalide")
+      setLoading(false)
+      router.push("/auth/login")
+      return
     }
 
-    fetchUser()
+    if (userDataString) {
+      try {
+        const userData = JSON.parse(userDataString) as UserData
+        setUser(userData)
+      } catch (err) {
+        console.error("Erreur de parsing des données utilisateur:", err)
+        setError("Données utilisateur corrompues")
+      }
+    } else {
+      setError("Données utilisateur non disponibles")
+    }
+
+    setLoading(false)
   }, [router])
 
-  // Déconnexion
   const handleLogout = async () => {
     try {
-      await fetch("http://192.168.20.83:3333/logout", {
+      const token = sessionStorage.getItem('token')
+
+      console.log("x-app-key envoyé:", APP_KEY)
+
+      const response = await fetch("http://192.168.1.66:3333/logout", {
         method: "POST",
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'x-app-key': APP_KEY,
+        },
         credentials: 'include',
       })
+
+      if (!response.ok) {
+        throw new Error("Erreur serveur lors de la déconnexion.")
+      }
+
+      // Nettoyage session
+      sessionStorage.removeItem('token')
+      sessionStorage.removeItem('userData')
       router.push("/auth/login")
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion", error)
+    } catch (err) {
+      console.error("Erreur lors de la déconnexion:", err)
+      setError("Échec de la déconnexion. Veuillez réessayer.")
     }
   }
 
@@ -56,6 +79,16 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
       </div>
     )
   }
@@ -73,7 +106,7 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {user && (
+        {user ? (
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4 text-gray-700">
               Informations du compte
@@ -89,6 +122,10 @@ export default function Dashboard() {
                 <span className="font-medium">Nom complet:</span> {user.fullName}
               </p>
             </div>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-600">Aucune donnée utilisateur disponible</p>
           </div>
         )}
       </div>

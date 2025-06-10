@@ -237,7 +237,7 @@ function DemoMeetingTab() {
     <div className={styles.tabContent}>
       <p style={{ margin: 0 }}>test.</p>
       <Button style={{ marginTop: '1rem' }} className="lk-button" onClick={startMeeting}>
-        Start Meeting
+        Réjoindre la réunion
       </Button>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>

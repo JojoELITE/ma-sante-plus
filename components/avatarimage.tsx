@@ -371,7 +371,8 @@ export default function Page() {
                     <div className="flex items-center gap-4">
                       <Image
                         src={
-                          user.avatar 
+                          user.avatar ||
+                          "https://backendadonis.onrender.com/uploads/avatar/kxerwhuvizaz5o0zw8p6dhk4.png"
                         }
                         alt={user.fullName}
                         width={60}

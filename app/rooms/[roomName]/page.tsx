@@ -1,8 +1,7 @@
 import { PageClientImpl } from './PageClientImpl';
 import { isVideoCodec } from '@/lib/types';
 
-export default async function Page({ params }: { params: { roomName: string } }) {
-  // Accès aux searchParams via l'URL actuelle
+export default function Page({ params }: { params: { roomName: string } }) {
   const url = new URL(process.env.NEXT_PUBLIC_BASE_URL + `/rooms/${params.roomName}`);
   const searchParams = url.searchParams;
 

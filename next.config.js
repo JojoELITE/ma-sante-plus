@@ -1,10 +1,16 @@
-module.exports = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: {
+    domains: ['backendadonis.onrender.com'],
+  },
   async rewrites() {
     return [
       {
         source: '/',
-        destination: 'http://192.168.20.83:3333/:path*',
+        destination: 'https://backendadonis.onrender.com/:path*',
       },
-    ]
+    ];
   },
-}
+};
+
+module.exports = nextConfig;

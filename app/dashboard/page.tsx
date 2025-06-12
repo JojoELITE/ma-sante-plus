@@ -51,7 +51,7 @@ export default function Dashboard() {
 
       console.log("x-app-key envoyé:", APP_KEY)
 
-      const response = await fetch("http://192.168.1.66:3333/logout", {
+      const response = await fetch("https://backendadonis.onrender.com/logout", {
         method: "POST",
         headers: {
           'Authorization': `Bearer ${token}`,

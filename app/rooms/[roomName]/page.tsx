@@ -1,26 +1,24 @@
-import * as React from 'react';
 import { PageClientImpl } from './PageClientImpl';
 import { isVideoCodec } from '@/lib/types';
 
-export default function Page({
-  params,
-  searchParams,
-}: {
-  params: { roomName: string };
-  searchParams: {
-    // FIXME: We should not allow values for regions if in playground mode.
-    region?: string;
-    hq?: string;
-    codec?: string;
-  };
-}) {
-  const codec =
-    typeof searchParams.codec === 'string' && isVideoCodec(searchParams.codec)
-      ? searchParams.codec
-      : 'vp9';
-  const hq = searchParams.hq === 'true' ? true : false;
+export default async function Page({ params }: { params: { roomName: string } }) {
+  // Accès aux searchParams via l'URL actuelle
+  const url = new URL(process.env.NEXT_PUBLIC_BASE_URL + `/rooms/${params.roomName}`);
+  const searchParams = url.searchParams;
+
+  const codecParam = searchParams.get('codec');
+  const hqParam = searchParams.get('hq');
+  const regionParam = searchParams.get('region');
+
+  const codec = codecParam && isVideoCodec(codecParam) ? codecParam : 'vp9';
+  const hq = hqParam === 'true';
 
   return (
-    <PageClientImpl roomName={params.roomName} region={searchParams.region} hq={hq} codec={codec} />
+    <PageClientImpl
+      roomName={params.roomName}
+      region={regionParam || undefined}
+      hq={hq}
+      codec={codec}
+    />
   );
 }

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Mail,
   Lock,
@@ -24,12 +25,9 @@ import {
   Pencil,
   Trash,
   UserIcon,
-  Image as ImageIcon,
+  ImageIcon,
 } from "lucide-react"
-import {
-  Alert,
-  AlertDescription,
-} from "@/components/ui/alert"
+import Image from "next/image"
 
 interface User {
   id: string
@@ -82,10 +80,10 @@ export default function Page() {
   const fetchUsers = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch("http://192.168.20.36:3333/users")
+      const response = await fetch("https://backendadonis.onrender.com/users")
       if (!response.ok) throw new Error(`Erreur ${response.status}`)
       const data: User[] = await response.json()
-    console.log(data)
+      console.log(data)
       setUsers(data)
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -121,8 +119,8 @@ export default function Page() {
       }
 
       const url = editingUserId
-        ? `http://192.168.20.36:3333/users/${editingUserId}`
-        : "http://192.168.20.36:3333/register"
+        ? `https://backendadonis.onrender.com/users/${editingUserId}`
+        : "https://backendadonis.onrender.com/register"
 
       const method = editingUserId ? "PUT" : "POST"
 
@@ -168,7 +166,7 @@ export default function Page() {
     if (!confirm("Voulez-vous vraiment supprimer cet utilisateur ?")) return
 
     try {
-      const response = await fetch(`http://192.168.20.36:3333/users/${id}`, {
+      const response = await fetch(`https://backendadonis.onrender.com/users/${id}`, {
         method: "DELETE",
       })
       if (!response.ok) throw new Error(`Erreur ${response.status}`)
@@ -227,11 +225,14 @@ export default function Page() {
                 </Label>
                 <div className="flex items-center gap-4">
                   <div className="relative">
-                    <img
-                      src={avatarPreview}
-                      alt=""
-                      className="h-20 w-20 rounded-full object-cover border-2 border-slate-200 bg-amber-600"
+                    <Image
+                      src={avatarPreview || "/default-avatar.png"} // Remplacer par une image par défaut si vide
+                      alt="avatar"
+                      width={100}
+                      height={100}
+                      className="rounded-full object-cover border-2 border-slate-200 bg-amber-600"
                     />
+
                   </div>
                   <div className="flex-1">
                     <Input
@@ -337,10 +338,12 @@ export default function Page() {
                 {users.map((user) => (
                   <div key={user.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg">
                     <div className="flex items-center gap-4">
-                      <img
-                        src={user.avatar || "http://192.168.20.30:3333/uploads/avatars/kxerwhuvizaz5o0zw8p6dhk4.png"}
+                      <Image
+                        src={user.avatar || "https://backendadonis.onrender.com/uploads/avatar/kxerwhuvizaz5o0zw8p6dhk4.png"}
                         alt={user.fullName}
-                        className="h-10 w-10 rounded-full object-cover"
+                        width={60}
+                        height={60}
+                        className="rounded-full object-cover"
                       />
                       <div>
                         <p className="font-medium">{user.fullName}</p>

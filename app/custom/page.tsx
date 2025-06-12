@@ -1,21 +1,34 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { videoCodecs } from 'livekit-client';
 import { VideoConferenceClientImpl } from './VideoConferenceClientImpl';
 import { isVideoCodec } from '@/lib/types';
 
-export default function CustomRoomConnection(props: {
-  searchParams: {
-    liveKitUrl?: string;
-    token?: string;
-    codec?: string;
-  };
-}) {
-  const { liveKitUrl, token, codec } = props.searchParams;
-  if (typeof liveKitUrl !== 'string') {
-    return <h2>Missing LiveKit URL</h2>;
+export default function CustomRoomPage() {
+  const [searchParams, setSearchParams] = useState<{
+    liveKitUrl: string | null;
+    token: string | null;
+    codec: string | undefined;
+  }>({ liveKitUrl: null, token: null, codec: undefined });
+
+  useEffect(() => {
+    // Get search params on client side
+    const params = new URLSearchParams(window.location.search);
+    setSearchParams({
+      liveKitUrl: params.get('liveKitUrl'),
+      token: params.get('token'),
+      codec: params.get('codec') || undefined,
+    });
+  }, []);
+
+  const { liveKitUrl, token, codec } = searchParams;
+  
+  if (liveKitUrl === null || token === null) {
+    // Show loading state or handle missing params
+    return <h2>Loading...</h2>;
   }
-  if (typeof token !== 'string') {
-    return <h2>Missing LiveKit token</h2>;
-  }
+
   if (codec !== undefined && !isVideoCodec(codec)) {
     return <h2>Invalid codec, if defined it has to be [{videoCodecs.join(', ')}].</h2>;
   }

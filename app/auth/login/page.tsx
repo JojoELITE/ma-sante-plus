@@ -33,7 +33,7 @@ export default function LoginPage() {
     setIsLoading(true)
   
     try {
-      const response = await fetch("http://192.168.20.30:3333/login", {
+      const response = await fetch("https://backendadonis.onrender.com/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

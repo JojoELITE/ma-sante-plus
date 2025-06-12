@@ -1,5 +1,3 @@
-// app/rooms/[roomName]/page.tsx
-
 import { PageClientImpl } from './PageClientImpl'
 import { isVideoCodec } from '@/lib/types'
 
@@ -12,19 +10,21 @@ export default async function Page({
 }) {
   const { roomName } = params
 
-  const codecParam = searchParams.codec
-  const hqParam = searchParams.hq
-  const regionParam = searchParams.region
+  const codecParam = Array.isArray(searchParams.codec) ? searchParams.codec[0] : searchParams.codec
+  const hqParam = Array.isArray(searchParams.hq) ? searchParams.hq[0] : searchParams.hq
+  const regionParam = Array.isArray(searchParams.region) ? searchParams.region[0] : searchParams.region
 
-  const codec = codecParam && isVideoCodec(codecParam as string) ? codecParam : 'vp9'
+  const codec: 'vp9' | 'vp8' | 'h264' | 'av1' =
+    codecParam && isVideoCodec(codecParam) ? codecParam : 'vp9'
+
   const hq = hqParam === 'true'
 
   return (
     <PageClientImpl
       roomName={roomName}
-      region={regionParam as string | undefined}
+      region={regionParam}
       hq={hq}
-      codec={"vp9"}
+      codec={codec}
     />
   )
 }

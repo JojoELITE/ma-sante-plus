@@ -1,8 +1,12 @@
 import { PageClientImpl } from './PageClientImpl';
 import { isVideoCodec } from '@/lib/types';
 
-export default function Page({ params }: { params: { roomName: string } }) {
-  const url = new URL(process.env.NEXT_PUBLIC_BASE_URL + `/rooms/${params.roomName}`);
+
+export default async function page({ params }: { params: Promise<{ roomName: string }> }) {
+  
+  // Vérifier si l'utilisateur est membre de l'organisation
+  const {roomName} = await params
+  const url = new URL(process.env.NEXT_PUBLIC_BASE_URL + `/rooms/${roomName}`);
   const searchParams = url.searchParams;
 
   const codecParam = searchParams.get('codec');
@@ -14,7 +18,7 @@ export default function Page({ params }: { params: { roomName: string } }) {
 
   return (
     <PageClientImpl
-      roomName={params.roomName}
+      roomName={roomName}
       region={regionParam || undefined}
       hq={hq}
       codec={codec}

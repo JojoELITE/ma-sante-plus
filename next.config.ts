@@ -8,12 +8,6 @@ module.exports = {
         port: '',
         pathname: '/uploads/avatars/**',
       },
-      {
-        protocol: 'http',
-        hostname: '192.168.1.66',
-        port: '3333',
-        pathname: '/uploads/avatars/**',
-      },
     ],
   },
   // Add this to ignore the rooms directory

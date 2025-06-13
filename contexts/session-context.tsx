@@ -8,6 +8,7 @@ interface UserData {
   id: number
   email: string
   fullName: string
+  avatar: string
 }
 
 interface SessionContextType {
@@ -89,6 +90,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           id: data.user.id,
           email: data.user.email,
           fullName: data.user.fullName,
+          avatar : data.user.avatar
         }
 
         // Stocker dans les cookies

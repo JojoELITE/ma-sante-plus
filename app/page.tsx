@@ -1,5 +1,7 @@
 // 'use client';
 
+import Register from "./register/page";
+
 // import { useRouter, useSearchParams } from 'next/navigation';
 // import React, { Suspense, useState } from 'react';
 // import { encodePassphrase, generateRoomId, randomString } from '@/lib/client-utils';
@@ -181,173 +183,188 @@
 // }
 
 
-'use client';
+// 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import React, { Suspense, useState } from 'react';
-import { encodePassphrase, randomString } from '@/lib/client-utils';
-import styles from '../styles/Home.module.css';
-import { Button } from '@/components/ui/button';
+// import { useRouter, useSearchParams } from 'next/navigation';
+// import React, { Suspense, useState } from 'react';
+// import { encodePassphrase, randomString } from '@/lib/client-utils';
+// import styles from '../styles/Home.module.css';
+// import { Button } from '@/components/ui/button';
 
-function Tabs(props: React.PropsWithChildren<object>) {
-  const searchParams = useSearchParams();
-  const tabIndex = searchParams?.get('tab') === 'custom' ? 1 : 0;
+// function Tabs(props: React.PropsWithChildren<object>) {
+//   const searchParams = useSearchParams();
+//   const tabIndex = searchParams?.get('tab') === 'custom' ? 1 : 0;
 
-  const router = useRouter();
-  function onTabSelected(index: number) {
-    const tab = index === 1 ? 'custom' : 'demo';
-    router.push(`/?tab=${tab}`);
-  }
+//   const router = useRouter();
+//   function onTabSelected(index: number) {
+//     const tab = index === 1 ? 'custom' : 'demo';
+//     router.push(`/?tab=${tab}`);
+//   }
 
-  const tabs = React.Children.map(props.children, (child, index) => (
-    <button
-      className="lk-button"
-      onClick={() => {
-        onTabSelected(index);
-      }}
-      aria-pressed={tabIndex === index}
-    >
-      {/* @ts-expect-error: Accessing the label prop from child */}
-      {child?.props.label}
-    </button>
-  ));
+//   const tabs = React.Children.map(props.children, (child, index) => (
+//     <button
+//       className="lk-button"
+//       onClick={() => {
+//         onTabSelected(index);
+//       }}
+//       aria-pressed={tabIndex === index}
+//     >
+//       {/* @ts-expect-error: Accessing the label prop from child */}
+//       {child?.props.label}
+//     </button>
+//   ));
+
+//   return (
+//     <div className={styles.tabContainer}>
+//       <div className={styles.tabSelect}>{tabs}</div>
+//       {/* @ts-expect-error: Accessing the selected tab based on index */}
+//       {props.children[tabIndex]}
+//     </div>
+//   );
+// }
+
+// function DemoMeetingTab() {
+//   const router = useRouter();
+//   const [e2ee, setE2ee] = useState(false);
+//   const [sharedPassphrase, setSharedPassphrase] = useState(randomString(64));
+
+//   const startMeeting = () => {
+//     const url = e2ee
+//       ? `/rooms/${21211}#${encodePassphrase(sharedPassphrase)}`
+//       : `/rooms/${21211}`;
+//     router.push(url);
+//   };
+
+//   return (
+//     <div className={styles.tabContent}>
+//       <p style={{ margin: 0 }}>test.</p>
+//       <Button style={{ marginTop: '1rem' }} className="lk-button" onClick={startMeeting}>
+//         Réjoindre la réunion
+//       </Button>
+//       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+//         <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
+//           <input
+//             id="use-e2ee"
+//             type="checkbox"
+//             checked={e2ee}
+//             onChange={(ev) => setE2ee(ev.target.checked)}
+//           />
+//           <label htmlFor="use-e2ee">Enable end-to-end encryption</label>
+//         </div>
+//         {e2ee && (
+//           <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
+//             <label htmlFor="passphrase">Passphrase</label>
+//             <input
+//               id="passphrase"
+//               type="password"
+//               value={sharedPassphrase}
+//               onChange={(ev) => setSharedPassphrase(ev.target.value)}
+//             />
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
+
+// function CustomConnectionTab() {
+//   const router = useRouter();
+//   const [e2ee, setE2ee] = useState(false);
+//   const [sharedPassphrase, setSharedPassphrase] = useState(randomString(64));
+
+//   const onSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
+//     event.preventDefault();
+//     const formData = new FormData(event.target as HTMLFormElement);
+//     const serverUrl = formData.get('serverUrl');
+//     const token = formData.get('token');
+
+//     const url = e2ee
+//       ? `/custom/?liveKitUrl=${serverUrl}&token=${token}#${encodePassphrase(sharedPassphrase)}`
+//       : `/custom/?liveKitUrl=${serverUrl}&token=${token}`;
+
+//     router.push(url);
+//   };
+
+//   return (
+//     <form className={styles.tabContent} onSubmit={onSubmit}>
+//       <p style={{ marginTop: 0 }}>welcome Test</p>
+//       <input
+//         id="serverUrl"
+//         name="serverUrl"
+//         type="url"
+//         placeholder="LiveKit Server URL: wss://*.livekit.cloud"
+//         required
+//       />
+//       <textarea
+//         id="token"
+//         name="token"
+//         placeholder="Token"
+//         required
+//         rows={5}
+//         style={{ padding: '1px 2px', fontSize: 'inherit', lineHeight: 'inherit' }}
+//       />
+//       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+//         <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
+//           <input
+//             id="use-e2ee"
+//             type="checkbox"
+//             checked={e2ee}
+//             onChange={(ev) => setE2ee(ev.target.checked)}
+//           />
+//           <label htmlFor="use-e2ee">Enable end-to-end encryption</label>
+//         </div>
+//         {e2ee && (
+//           <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
+//             <label htmlFor="passphrase">Passphrase</label>
+//             <input
+//               id="passphrase"
+//               type="password"
+//               value={sharedPassphrase}
+//               onChange={(ev) => setSharedPassphrase(ev.target.value)}
+//             />
+//           </div>
+//         )}
+//       </div>
+
+//       <hr
+//         style={{ width: '100%', borderColor: 'rgba(255, 255, 255, 0.15)', marginBlock: '1rem' }}
+//       />
+//       <button
+//         style={{ paddingInline: '1.25rem', width: '100%' }}
+//         className="lk-button"
+//         type="submit"
+//       >
+//         Connect
+//       </button>
+//     </form>
+//   );
+// }
+
+// export default function Page() {
+//   return (
+//     <main className={styles.main} data-lk-theme="default">
+//       <div>Livekit</div>
+//       <Suspense fallback="Loading">
+//         <Tabs>
+//           <DemoMeetingTab />
+//           <CustomConnectionTab />
+//         </Tabs>
+//       </Suspense>
+//     </main>
+//   );
+// }
+
+
+
+
+
+
+export default  function Page() {
 
   return (
-    <div className={styles.tabContainer}>
-      <div className={styles.tabSelect}>{tabs}</div>
-      {/* @ts-expect-error: Accessing the selected tab based on index */}
-      {props.children[tabIndex]}
+    <div>
+      <Register/>
     </div>
-  );
+  )
 }
 
-function DemoMeetingTab() {
-  const router = useRouter();
-  const [e2ee, setE2ee] = useState(false);
-  const [sharedPassphrase, setSharedPassphrase] = useState(randomString(64));
-
-  const startMeeting = () => {
-    const url = e2ee
-      ? `/rooms/${21211}#${encodePassphrase(sharedPassphrase)}`
-      : `/rooms/${21211}`;
-    router.push(url);
-  };
-
-  return (
-    <div className={styles.tabContent}>
-      <p style={{ margin: 0 }}>test.</p>
-      <Button style={{ marginTop: '1rem' }} className="lk-button" onClick={startMeeting}>
-        Réjoindre la réunion
-      </Button>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
-          <input
-            id="use-e2ee"
-            type="checkbox"
-            checked={e2ee}
-            onChange={(ev) => setE2ee(ev.target.checked)}
-          />
-          <label htmlFor="use-e2ee">Enable end-to-end encryption</label>
-        </div>
-        {e2ee && (
-          <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
-            <label htmlFor="passphrase">Passphrase</label>
-            <input
-              id="passphrase"
-              type="password"
-              value={sharedPassphrase}
-              onChange={(ev) => setSharedPassphrase(ev.target.value)}
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function CustomConnectionTab() {
-  const router = useRouter();
-  const [e2ee, setE2ee] = useState(false);
-  const [sharedPassphrase, setSharedPassphrase] = useState(randomString(64));
-
-  const onSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
-    event.preventDefault();
-    const formData = new FormData(event.target as HTMLFormElement);
-    const serverUrl = formData.get('serverUrl');
-    const token = formData.get('token');
-
-    const url = e2ee
-      ? `/custom/?liveKitUrl=${serverUrl}&token=${token}#${encodePassphrase(sharedPassphrase)}`
-      : `/custom/?liveKitUrl=${serverUrl}&token=${token}`;
-
-    router.push(url);
-  };
-
-  return (
-    <form className={styles.tabContent} onSubmit={onSubmit}>
-      <p style={{ marginTop: 0 }}>welcome Test</p>
-      <input
-        id="serverUrl"
-        name="serverUrl"
-        type="url"
-        placeholder="LiveKit Server URL: wss://*.livekit.cloud"
-        required
-      />
-      <textarea
-        id="token"
-        name="token"
-        placeholder="Token"
-        required
-        rows={5}
-        style={{ padding: '1px 2px', fontSize: 'inherit', lineHeight: 'inherit' }}
-      />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
-          <input
-            id="use-e2ee"
-            type="checkbox"
-            checked={e2ee}
-            onChange={(ev) => setE2ee(ev.target.checked)}
-          />
-          <label htmlFor="use-e2ee">Enable end-to-end encryption</label>
-        </div>
-        {e2ee && (
-          <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
-            <label htmlFor="passphrase">Passphrase</label>
-            <input
-              id="passphrase"
-              type="password"
-              value={sharedPassphrase}
-              onChange={(ev) => setSharedPassphrase(ev.target.value)}
-            />
-          </div>
-        )}
-      </div>
-
-      <hr
-        style={{ width: '100%', borderColor: 'rgba(255, 255, 255, 0.15)', marginBlock: '1rem' }}
-      />
-      <button
-        style={{ paddingInline: '1.25rem', width: '100%' }}
-        className="lk-button"
-        type="submit"
-      >
-        Connect
-      </button>
-    </form>
-  );
-}
-
-export default function Page() {
-  return (
-    <main className={styles.main} data-lk-theme="default">
-      <div>Livekit</div>
-      <Suspense fallback="Loading">
-        <Tabs>
-          <DemoMeetingTab />
-          <CustomConnectionTab />
-        </Tabs>
-      </Suspense>
-    </main>
-  );
-}

@@ -37,7 +37,7 @@ interface User {
   avatar: string | null // Stockera l'image en base64
 }
 
-export default function Page() {
+export default function Register() {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",

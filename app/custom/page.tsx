@@ -13,7 +13,6 @@ export default function CustomRoomPage() {
   }>({ liveKitUrl: null, token: null, codec: undefined });
 
   useEffect(() => {
-    // Get search params on client side
     const params = new URLSearchParams(window.location.search);
     setSearchParams({
       liveKitUrl: params.get('liveKitUrl'),
@@ -25,7 +24,6 @@ export default function CustomRoomPage() {
   const { liveKitUrl, token, codec } = searchParams;
   
   if (liveKitUrl === null || token === null) {
-    // Show loading state or handle missing params
     return <h2>Loading...</h2>;
   }
 

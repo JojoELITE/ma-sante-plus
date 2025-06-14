@@ -3,12 +3,12 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { setCookie, getCookie, removeCookie } from "@/utils/cookies"
+import api from "@/app/services/page"
 
 interface UserData {
   id: number
   email: string
   fullName: string
-  avatar: string
 }
 
 interface SessionContextType {
@@ -30,7 +30,7 @@ const USER_DATA_COOKIE = "auth_user"
 // Options des cookies avec le type correct
 const cookieOptions = {
   path: "/",
-  sameSite: "strict" as const, // Type assertion pour éviter les erreurs
+  sameSite: "strict" as const,
   secure: process.env.NODE_ENV === "production",
   maxAge: 7 * 24 * 60 * 60, // 7 jours
 }
@@ -40,8 +40,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
-
-  const APP_KEY = process.env.NEXT_PUBLIC_SECRET_CODE ?? "2a10D6ZKGGzMXxNMFvFJv2.qUeEr1Bi8d/tskhmY5YyE8Au8kmrAqE"
 
   useEffect(() => {
     // Vérifier si l'utilisateur est déjà connecté au chargement
@@ -69,16 +67,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setIsLoading(true)
 
     try {
-      const response = await fetch("https://backendadonis.onrender.com/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-app-key": APP_KEY,
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: "include",
-      })
-
+      // Utiliser notre service API avec intercepteurs
+      const response = await api.post("/login", { email, password })
       const data = await response.json()
 
       if (!response.ok) {
@@ -90,7 +80,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           id: data.user.id,
           email: data.user.email,
           fullName: data.user.fullName,
-          avatar : data.user.avatar
         }
 
         // Stocker dans les cookies
@@ -123,21 +112,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      if (token) {
-        const response = await fetch("https://backendadonis.onrender.com/logout", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            "x-app-key": APP_KEY,
-          },
-          credentials: "include",
-        })
-
-        if (!response.ok) {
-          console.error("Erreur lors de la déconnexion côté serveur")
-        }
-      }
+      // Utiliser notre service API avec intercepteurs
+      await api.post("/logout", {})
     } catch (err) {
       console.error("Erreur lors de la déconnexion:", err)
     } finally {

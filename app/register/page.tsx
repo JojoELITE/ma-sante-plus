@@ -1,57 +1,37 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState } from "react"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  Mail,
-  Lock,
-  UserPlus,
-  Users,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  Pencil,
-  Trash,
-  UserIcon,
-  ImageIcon,
-} from "lucide-react"
+import { Mail, Lock, UserPlus, CheckCircle, AlertCircle, Loader2, UserIcon, ImageIcon, ArrowLeft } from "lucide-react"
 import Image from "next/image"
-
-interface User {
-  id: string
-  fullName: string
-  email: string
-  password: string
-  avatar: string | null // Stockera l'image en base64
-}
+import Link from "next/link"
+import EditUserForm from "@/components/edit-user-form"
+import api from "../services/page"
 
 export default function Register() {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     password: "",
-    avatar: ""
+    avatar: "",
   })
 
-  const [users, setUsers] = useState<User[]>([])
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [editingUserId, setEditingUserId] = useState<string | null>(null)
   const [avatarPreview, setAvatarPreview] = useState("")
+  const [redirecting, setRedirecting] = useState(false)
+
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const editUserId = searchParams.get("edit")
+  const isEditing = !!editUserId
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -64,6 +44,17 @@ export default function Register() {
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Vérifier la taille du fichier (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError("L'image ne doit pas dépasser 5MB")
+        return
+      }
+
+      // Vérifier le type de fichier
+      if (!file.type.startsWith("image/")) {
+        setError("Veuillez sélectionner un fichier image valide")
+        return
+      }
       const reader = new FileReader()
       reader.onloadend = () => {
         const base64String = reader.result as string
@@ -72,33 +63,11 @@ export default function Register() {
           ...formData,
           avatar: base64String,
         })
+        setError("")
       }
       reader.readAsDataURL(file)
     }
   }
-
-  const fetchUsers = async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch("https://backendadonis.onrender.com/users")
-      if (!response.ok) throw new Error(`Erreur ${response.status}`)
-      const data: User[] = await response.json()
-      console.log(data)
-      setUsers(data)
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(`Erreur lors de la récupération des utilisateurs: ${err.message}`)
-      } else {
-        setError("Erreur inconnue lors de la récupération des utilisateurs")
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchUsers()
-  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -107,9 +76,25 @@ export default function Register() {
     setIsSubmitting(true)
 
     try {
+      // Validation côté client
+      if (!formData.fullName.trim()) {
+        throw new Error("Le nom complet est requis")
+      }
+      if (!formData.email.trim()) {
+        throw new Error("L'email est requis")
+      }
+      if (!formData.password.trim()) {
+        throw new Error("Le mot de passe est requis pour la création")
+      }
+
+      console.log("Soumission du formulaire de création:", {
+        formData: { ...formData, password: formData.password ? "[MASQUÉ]" : "" },
+      })
+
+      // Pour la création, utiliser FormData
       const form = new FormData()
-      form.append("fullName", formData.fullName)
-      form.append("email", formData.email)
+      form.append("fullName", formData.fullName.trim())
+      form.append("email", formData.email.trim())
       form.append("password", formData.password)
 
       // Récupère le fichier depuis l'input
@@ -118,28 +103,42 @@ export default function Register() {
         form.append("avatar", fileInput.files[0])
       }
 
-      const url = editingUserId
-        ? `https://backendadonis.onrender.com/users/${editingUserId}`
-        : "https://backendadonis.onrender.com/register"
-
-      const method = editingUserId ? "PUT" : "POST"
-
-      const response = await fetch(url, {
-        method,
+      // Utilisation de notre service API avec intercepteurs
+      const response = await api.fetch("/register", {
+        method: "POST",
         body: form,
       })
 
+      console.log("Réponse API:", response.status, response.statusText)
+
       if (!response.ok) {
         const errorText = await response.text()
-        throw new Error(`Erreur ${response.status} : ${errorText}`)
+        console.error("Erreur API:", errorText)
+        throw new Error(`Erreur ${response.status}: ${errorText}`)
       }
 
-      setMessage(editingUserId ? "Utilisateur modifié avec succès !" : "Utilisateur créé avec succès !")
+      const responseData = await response.json().catch(() => ({}))
+      console.log("Données de réponse:", responseData)
+
+      setMessage("Utilisateur créé avec succès !")
+      setRedirecting(true)
+
+      // Réinitialiser le formulaire après création
       setFormData({ fullName: "", email: "", password: "", avatar: "" })
       setAvatarPreview("")
-      setEditingUserId(null)
-      fetchUsers()
+      // Effacer l'input file
+      const avatarInput = document.getElementById("avatarInput") as HTMLInputElement
+      if (avatarInput) {
+        avatarInput.value = ""
+      }
+
+      // Rediriger vers la liste des utilisateurs après 2 secondes
+      setTimeout(() => {
+        // Utiliser window.location.href pour une redirection complète
+        window.location.href = "/users"
+      }, 2000)
     } catch (err: unknown) {
+      console.error("Erreur lors de la soumission:", err)
       if (err instanceof Error) {
         setError(err.message)
       } else {
@@ -150,230 +149,156 @@ export default function Register() {
     }
   }
 
-
-  const handleEdit = (user: User) => {
-    setFormData({
-      fullName: user.fullName,
-      email: user.email,
-      password: "",
-      avatar: user.avatar || ""
-    })
-    setAvatarPreview(user.avatar || "")
-    setEditingUserId(user.id)
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Voulez-vous vraiment supprimer cet utilisateur ?")) return
-
-    try {
-      const response = await fetch(`https://backendadonis.onrender.com/users/${id}`, {
-        method: "DELETE",
-      })
-      if (!response.ok) throw new Error(`Erreur ${response.status}`)
-      setMessage("Utilisateur supprimé avec succès.")
-      fetchUsers()
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(`Erreur lors de la suppression : ${err.message}`)
-      } else {
-        setError("Erreur inconnue lors de la suppression")
-      }
-    }
-  }
-
   return (
     <div className="p-10">
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-slate-900">Gestion des Utilisateurs</h1>
-        <p className="text-slate-600">Créez, modifiez et supprimez vos utilisateurs facilement</p>
-      </div>
+      <div className="max-w-2xl mx-auto">
+        <div className="flex items-center gap-4 mb-6">
+          <Link href="/users">
+            <Button variant="outline" size="sm">
+              <ArrowLeft size={16} className="mr-2" />
+              Retour à la liste
+            </Button>
+          </Link>
+        </div>
 
-      <div className="space-y-8 flex gap-10 p-20 flex-col lg:flex-row">
-        {/* Formulaire */}
-        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm w-full">
-          <CardHeader className="space-y-1">
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <UserPlus className="h-5 w-5 text-blue-600" />
-              {editingUserId ? "Modifier un utilisateur" : "Créer un utilisateur"}
-            </CardTitle>
-            <CardDescription>
-              {editingUserId
-                ? "Modifiez les informations de l'utilisateur sélectionné"
-                : "Remplissez les informations pour créer un utilisateur"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {message && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">{message}</AlertDescription>
-              </Alert>
-            )}
+        <div className="text-center space-y-2 mb-8">
+          <h1 className="text-3xl font-bold text-slate-900">
+            {isEditing ? "Modifier l'utilisateur" : "Créer un utilisateur"}
+          </h1>
+          <p className="text-slate-600">
+            {isEditing
+              ? "Modifiez les informations de l'utilisateur sélectionné"
+              : "Remplissez les informations pour créer un nouvel utilisateur"}
+          </p>
+        </div>
 
-            {error && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">{error}</AlertDescription>
-              </Alert>
-            )}
+        {isEditing && editUserId ? (
+          <EditUserForm userId={editUserId} />
+        ) : (
+          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader className="space-y-1">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <UserPlus className="h-5 w-5 text-blue-600" />
+                Créer un utilisateur
+              </CardTitle>
+              <CardDescription>Remplissez les informations pour créer un utilisateur</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {message && (
+                <Alert className="border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    {message}
+                    {redirecting && " Redirection vers la liste des utilisateurs..."}
+                  </AlertDescription>
+                </Alert>
+              )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="avatar" className="flex items-center gap-2 text-sm font-medium">
-                  <ImageIcon className="h-4 w-4 text-slate-600" />
-                  Avatar
-                </Label>
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <Image
-                      src={avatarPreview || "/default-avatar.png"} // Remplacer par une image par défaut si vide
-                      alt="avatar"
-                      width={100}
-                      height={100}
-                      className="rounded-full object-cover border-2 border-slate-200 bg-amber-600"
-                    />
+              {error && (
+                <Alert className="border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">{error}</AlertDescription>
+                </Alert>
+              )}
 
-                  </div>
-                  <div className="flex-1">
-                    <Input
-                      id="avatarInput"
-                      name="avatar"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarUpload}
-                    />
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="avatar" className="flex items-center gap-2 text-sm font-medium">
+                    <ImageIcon className="h-4 w-4 text-slate-600" />
+                    Avatar
+                  </Label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <Image
+                        src={avatarPreview || "/placeholder.svg?height=100&width=100"}
+                        alt="avatar"
+                        width={100}
+                        height={100}
+                        className="rounded-full object-cover border-2 border-slate-200"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Input
+                        id="avatarInput"
+                        name="avatar"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Formats acceptés: JPG, PNG, GIF (max 5MB)</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="fullName" className="flex items-center gap-2 text-sm font-medium">
-                  <UserIcon className="h-4 w-4 text-slate-600" />
-                  Nom complet
-                </Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName" className="flex items-center gap-2 text-sm font-medium">
+                    <UserIcon className="h-4 w-4 text-slate-600" />
+                    Nom complet *
+                  </Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    required
+                    placeholder="Entrez le nom complet"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium">
-                  <Mail className="h-4 w-4 text-slate-600" />
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium">
+                    <Mail className="h-4 w-4 text-slate-600" />
+                    Email *
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    placeholder="exemple@email.com"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="flex items-center gap-2 text-sm font-medium">
-                  <Lock className="h-4 w-4 text-slate-600" />
-                  Mot de passe
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder={editingUserId ? "Laisser vide pour ne pas modifier" : "Entrez un mot de passe"}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="flex items-center gap-2 text-sm font-medium">
+                    <Lock className="h-4 w-4 text-slate-600" />
+                    Mot de passe *
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    placeholder="Entrez un mot de passe"
+                  />
+                </div>
 
-              <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700">
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {editingUserId ? "Mise à jour..." : "Création en cours..."}
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    {editingUserId ? "Modifier l'utilisateur" : "Créer l'utilisateur"}
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Liste */}
-        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm w-full">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-slate-600" />
-                Liste des utilisateurs
-              </div>
-              <Badge variant="secondary" className="bg-slate-100">
-                {users.length} utilisateur{users.length !== 1 ? "s" : ""}
-              </Badge>
-            </CardTitle>
-            <CardDescription>Tous les utilisateurs enregistrés</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-                <span className="ml-2 text-slate-600">Chargement...</span>
-              </div>
-            ) : users.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
-                <Users className="h-12 w-12 mx-auto mb-3 text-slate-300" />
-                <p>Aucun utilisateur trouvé</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {users.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <Image
-                        src={user.avatar || "https://backendadonis.onrender.com/uploads/avatar/kxerwhuvizaz5o0zw8p6dhk4.png"}
-                        alt={user.fullName}
-                        width={60}
-                        height={60}
-                        className="rounded-full object-cover"
-                      />
-                      <div>
-                        <p className="font-medium">{user.fullName}</p>
-                        <p className="text-sm text-slate-500">{user.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(user)}
-                        className="text-blue-500 hover:bg-blue-50"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(user.id)}
-                        className="text-red-500 hover:bg-red-50"
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || redirecting}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Création en cours...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Créer l'utilisateur
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )
